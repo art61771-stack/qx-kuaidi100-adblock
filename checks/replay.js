@@ -15,8 +15,8 @@ for (const file of process.argv.slice(2)) {
     const url = e.request.url, u = new URL(url), c = e.response.content || {};
     const body = c.encoding === 'base64' ? Buffer.from(c.text || '', 'base64').toString() : c.text || '';
     const hits = rules.filter(r=>r.re.test(url));
-    if (u.hostname === 'ad.api.open.jihuoniao.com') {assert(hits.some(r=>r.action==='reject-dict')); sdk++;}
-    if (u.hostname === 'p.kuaidi100.com' && u.pathname.startsWith('/advertisement/ad/')) {assert(hits.some(r=>r.action==='reject-dict')); ad++;}
+    if (u.hostname === 'ad.api.open.jihuoniao.com') {assert.equal(e.response.status,404); assert.equal(hits.length,0); sdk++;}
+    if (u.hostname === 'p.kuaidi100.com' && u.pathname.startsWith('/advertisement/ad/')) {assert.equal(e.response.status,404); assert.equal(hits.length,0); ad++;}
     if (u.hostname === 'cdn.kuaidi100.com' && u.pathname.startsWith('/images/open/appads/')) {assert.equal(hits.length,0);business++;}
     if (u.hostname !== 'p.kuaidi100.com' || u.pathname !== '/apicenter/kdmkt.do') continue;
     const result = run(url, body), method = u.searchParams.get('method');

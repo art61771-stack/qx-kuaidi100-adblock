@@ -1,18 +1,12 @@
 # 快递100微信小程序去广告
-# 2026-10-24 | 基于两份 HAR 的开屏、页面广告位及极火鸟 SDK 请求
+# 2026-10-24 | 基于两份 HAR 的广告位配置响应
 # 添加到 Quantumult X：重写 → 引用；开启重写和 MitM，并信任证书。
-# 建议同时添加本仓库 kuaidi100.list 到分流，阻止 SDK 连接。
-
-# 广告接口：空 JSON 成功响应，避免 reject 的重复请求延迟。
-^https:\/\/p\.kuaidi100\.com\/advertisement\/ad\/ url reject-dict
+# 原广告接口和极火鸟接口在抓包中均返回 404，保留其原始响应。
 
 # 清除混合字典接口中的 wx_ad_config 广告位；移除积分抽奖悬浮入口。
 ^https:\/\/p\.kuaidi100\.com\/apicenter\/kdmkt\.do\?(?=[^#]*\bmethod=(?:dictItemsByCode|dictItemDescByCodeAndVal)(?:&|$)) url script-response-body https://raw.githubusercontent.com/art61771-stack/qx-kuaidi100-adblock/main/scripts/kuaidi100.js
 
-# 极火鸟 SDK：开屏、横幅、插屏广告请求。
-^https?:\/\/ad\.api\.open\.jihuoniao\.com\/ url reject-dict
-
 # 积分抽奖悬浮推广图片。
 ^https:\/\/cdn\.kuaidi100\.com\/images\/icon_luckyDraw_enter\.gif(?:\?|$) url reject-img
 
-hostname = p.kuaidi100.com, cdn.kuaidi100.com, ad.api.open.jihuoniao.com
+hostname = p.kuaidi100.com, cdn.kuaidi100.com
