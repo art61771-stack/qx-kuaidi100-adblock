@@ -1,18 +1,18 @@
-# 快递100微信小程序去广告
-# 2026-10-24 | 基于两份 HAR 的广告位配置响应
-# 添加到 Quantumult X：重写 → 引用；开启重写和 MitM，并信任证书。
-# v2：结合 10/24 新抓包，保留真实成功结构，关闭 SDK 开关并清空推广列表。
-
-# 极火鸟广告配置：jihuoniao_allow 改为 0，保留 code/message/data。
-^https:\/\/ad\.api\.open\.jihuoniao\.com\/api\/jihuoniao\/v1\/ad\/ad_config(?:\?|$) url script-response-body https://raw.githubusercontent.com/art61771-stack/qx-kuaidi100-adblock/main/scripts/kuaidi100.js?v=20261024b
-
-# 自有广告位：仅清空 data.list，保留响应状态与其他字段。
-^https:\/\/p\.kuaidi100\.com\/advertisement\/ad\/multi\/terminal(?:\/config)?(?:\?|$) url script-response-body https://raw.githubusercontent.com/art61771-stack/qx-kuaidi100-adblock/main/scripts/kuaidi100.js?v=20261024b
-
-# 清除混合字典接口中的 wx_ad_config 广告位；移除积分抽奖悬浮入口。
-^https:\/\/p\.kuaidi100\.com\/apicenter\/kdmkt\.do\?(?=[^#]*\bmethod=(?:dictItemsByCode|dictItemDescByCodeAndVal)(?:&|$)) url script-response-body https://raw.githubusercontent.com/art61771-stack/qx-kuaidi100-adblock/main/scripts/kuaidi100.js?v=20261024b
-
-# 积分抽奖悬浮推广图片。
-^https:\/\/cdn\.kuaidi100\.com\/images\/icon_luckyDraw_enter\.gif(?:\?|$) url reject-img
-
+# 快递100微信小程序去广告 v3 · 2026-10-24
+# 使用 QX 内置 jsonjq-response-body，无远程 JavaScript 依赖。
+# 重写、MitM 均需启用；停用重复的旧快递100重写。
 hostname = p.kuaidi100.com, cdn.kuaidi100.com, ad.api.open.jihuoniao.com
+
+# 仅移除广告字典项，保留同接口的其他业务字典。
+^https://p\.kuaidi100\.com/apicenter/kdmkt\.do\?.*method=dictItemsByCode(&|$) url jsonjq-response-body 'if ((.status | tostring) == "200") and ((.data | type) == "array") then .data |= map(select(.dictCode != "wx_ad_config")) else . end'
+
+# 抽奖悬浮入口：保留对象，清空素材与跳转地址。
+^https://p\.kuaidi100\.com/apicenter/kdmkt\.do\?(?=[^#]*\bmethod=dictItemDescByCodeAndVal(?:&|$))(?=[^#]*\bdictCode=COMMON_CONFIG(?:&|$))(?=[^#]*\bdictVal=index_activity_float_banner(?:&|$)) url jsonjq-response-body 'if ((.status | tostring) == "200") and ((.data | type) == "object") then .data.icon = "" | .data.path = "" | .data.iOSPath = "" | .data.androidPath = "" else . end'
+
+# 自有推广列表：保留成功状态、其他字段及失败响应。
+^https://p\.kuaidi100\.com/advertisement/ad/multi/terminal(/config)?(\?|$) url jsonjq-response-body 'if ((.status | tostring) == "200") and ((.data.list | type) == "array") then .data.list = [] else . end'
+
+# 极火鸟关闭开关；不伪造空成功响应。
+^https://ad\.api\.open\.jihuoniao\.com/api/jihuoniao/v1/ad/ad_config(\?|$) url jsonjq-response-body 'if (.code == 0) and ((.data | type) == "object") then .data.jihuoniao_allow = 0 else . end'
+
+^https://cdn\.kuaidi100\.com/images/icon_luckyDraw_enter\.gif(\?|$) url reject-img
