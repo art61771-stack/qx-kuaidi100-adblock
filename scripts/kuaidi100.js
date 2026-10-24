@@ -3,16 +3,32 @@
   const original = $response.body;
   try {
     const rawUrl = $request.url;
-    if (!/^https:\/\/p\.kuaidi100\.com\/apicenter\/kdmkt\.do\?/.test(rawUrl)) {
-      $done({}); return;
-    }
+    const isDict = /^https:\/\/p\.kuaidi100\.com\/apicenter\/kdmkt\.do\?/.test(rawUrl);
+    const isAds = /^https:\/\/p\.kuaidi100\.com\/advertisement\/ad\/multi\/terminal(?:\/config)?(?:\?|$)/.test(rawUrl);
+    const isSDK = /^https:\/\/ad\.api\.open\.jihuoniao\.com\/api\/jihuoniao\/v1\/ad\/ad_config(?:\?|$)/.test(rawUrl);
+    if (!isDict && !isAds && !isSDK) { $done({}); return; }
     function param(name) {
       const match = rawUrl.match(new RegExp("[?&]" + name + "=([^&]*)"));
       return match ? decodeURIComponent(match[1].replace(/\+/g, " ")) : "";
     }
     const method = param("method");
     const obj = JSON.parse(original);
-    if (obj.status !== 200) { $done({}); return; }
+    if (isSDK) {
+      if (obj.code === 0 && obj.data && typeof obj.data === "object" && !Array.isArray(obj.data)) {
+        obj.data.jihuoniao_allow = 0;
+        $done({ body: JSON.stringify(obj) }); return;
+      }
+      $done({}); return;
+    }
+    if (String(obj.status) !== "200") { $done({}); return; }
+    if (isAds) {
+      // 真实的无广告响应是 data.list=[]，保留 message/status 的原始类型。
+      if (obj.data && Array.isArray(obj.data.list)) {
+        obj.data.list = [];
+        $done({ body: JSON.stringify(obj) }); return;
+      }
+      $done({}); return;
+    }
     let changed = false;
     // 同一字典接口也承载快递公司名单等功能，只删除明确属于广告的字典项。
     if (method === "dictItemsByCode" && Array.isArray(obj.data)) {
@@ -23,7 +39,10 @@
     if (method === "dictItemDescByCodeAndVal" &&
         param("dictCode") === "COMMON_CONFIG" &&
         param("dictVal") === "index_activity_float_banner") {
-      obj.data = null; changed = true;
+      if (obj.data && typeof obj.data === "object" && !Array.isArray(obj.data)) {
+        ["icon", "path", "iOSPath", "androidPath"].forEach(key => { obj.data[key] = ""; });
+        changed = true;
+      }
     }
     $done(changed ? { body: JSON.stringify(obj) } : {});
   } catch (_) { $done({}); }
