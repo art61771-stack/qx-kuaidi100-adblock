@@ -24,7 +24,8 @@ for file in sys.argv[1:]:
   p=subprocess.run(['jq','-c',filt],input=body,text=True,capture_output=True)
   assert p.returncode==0,p.stderr
   after=json.loads(p.stdout);expected=json.loads(body)
-  if 'dictItemsByCode' in url:
+  request=e['request'];post=request.get('postData',{}).get('text','')
+  if 'dictItemsByCode' in url or ('/apicenter/kdmkt.do' in url and 'dictItemsByCode' in post):
    expected['data']=[x for x in expected['data'] if x.get('dictCode')!='wx_ad_config'];counts['dict']+=1
   elif 'dictItemDescByCodeAndVal' in url:
    for k in ['icon','path','iOSPath','androidPath']:expected['data'][k]=''

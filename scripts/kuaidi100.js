@@ -6,12 +6,16 @@
     const isDict = /^https:\/\/p\.kuaidi100\.com\/apicenter\/kdmkt\.do\?/.test(rawUrl);
     const isAds = /^https:\/\/p\.kuaidi100\.com\/advertisement\/ad\/multi\/terminal(?:\/config)?(?:\?|$)/.test(rawUrl);
     const isSDK = /^https:\/\/ad\.api\.open\.jihuoniao\.com\/api\/jihuoniao\/v1\/ad\/ad_config(?:\?|$)/.test(rawUrl);
-    if (!isDict && !isAds && !isSDK) { $done({}); return; }
+    const isDictEndpoint = /^https:\/\/p\.kuaidi100\.com\/apicenter\/kdmkt\.do(?:\?|$)/.test(rawUrl);
+    if (!isDictEndpoint && !isAds && !isSDK) { $done({}); return; }
     function param(name) {
       const match = rawUrl.match(new RegExp("[?&]" + name + "=([^&]*)"));
       return match ? decodeURIComponent(match[1].replace(/\+/g, " ")) : "";
     }
     const method = param("method");
+    const postData = $request.body || "";
+    const postMethod = postData.match(/(?:^|&)method=([^&]*)/);
+    const effectiveMethod = method || (postMethod ? decodeURIComponent(postMethod[1]) : "");
     const obj = JSON.parse(original);
     if (isSDK) {
       if (obj.code === 0 && obj.data && typeof obj.data === "object" && !Array.isArray(obj.data)) {
@@ -31,7 +35,7 @@
     }
     let changed = false;
     // 同一字典接口也承载快递公司名单等功能，只删除明确属于广告的字典项。
-    if (method === "dictItemsByCode" && Array.isArray(obj.data)) {
+    if ((method === "dictItemsByCode" || effectiveMethod === "dictItemsByCode" || (isDictEndpoint && param("dictCode") === "wx_ad_config")) && Array.isArray(obj.data)) {
       const clean = obj.data.filter(item => !(item && item.dictCode === "wx_ad_config"));
       if (clean.length !== obj.data.length) { obj.data = clean; changed = true; }
     }

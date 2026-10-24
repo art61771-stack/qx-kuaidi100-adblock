@@ -4,7 +4,7 @@
 hostname = p.kuaidi100.com, cdn.kuaidi100.com, ad.api.open.jihuoniao.com
 
 # 仅移除广告字典项，保留同接口的其他业务字典。
-^https://p\.kuaidi100\.com/apicenter/kdmkt\.do\?.*method=dictItemsByCode(&|$) url jsonjq-response-body 'if ((.status | tostring) == "200") and ((.data | type) == "array") then .data |= map(select(.dictCode != "wx_ad_config")) else . end'
+^https://p\.kuaidi100\.com/apicenter/kdmkt\.do\?method=dictItemsByCode(?=&|$) url jsonjq-response-body 'if ((.status | tostring) == "200") and ((.data | type) == "array") then .data |= map(select(.dictCode != "wx_ad_config")) else . end'
 
 # 抽奖悬浮入口：保留对象，清空素材与跳转地址。
 ^https://p\.kuaidi100\.com/apicenter/kdmkt\.do\?(?=[^#]*\bmethod=dictItemDescByCodeAndVal(?:&|$))(?=[^#]*\bdictCode=COMMON_CONFIG(?:&|$))(?=[^#]*\bdictVal=index_activity_float_banner(?:&|$)) url jsonjq-response-body 'if ((.status | tostring) == "200") and ((.data | type) == "object") then .data.icon = "" | .data.path = "" | .data.iOSPath = "" | .data.androidPath = "" else . end'
