@@ -1,0 +1,3 @@
+# 快递100使用的极火鸟广告 SDK。添加到 Quantumult X 分流 → 引用。
+# 精确域名；不会拦截微信公共服务或快递100业务域名。
+host, ad.api.open.jihuoniao.com, reject
